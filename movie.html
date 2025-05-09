@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Tree Map Diagram</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <div id="nav-container">
+            <nav>
+                <a id="video-link" href="./video.html">Video Game Data Set</a>
+                <span>|</span>
+                <a id="movie-link" href="./movie.html">Movie Data Set</a>
+                <span>|</span>
+                <a id="kick-link" href="./kickstarter.html">Kickstarter Data Set</a>
+            </nav>
+        </div>
+        <h1 id="title">Video Game Sales</h1>
+        <h3 id="description">Top 100 Most Pledged Kickstarter Campaigns Grouped By Category</h3>
+        <div class="data-container">
+            <svg id="dataSvg"></svg>
+        </div>
+        <div class="legend-container">
+            <svg id="legend"></svg>
+        </div>
+        <div id="tooltip"></div>
+        <script>
+            const width = 1200;
+            const height = 550;
+            const videoGameUrl = "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/video-game-sales-data.json";
+            const movieSalesUrl = "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/movie-data.json"
+            const kickStarterUrl = "https://cdn.freecodecamp.org/testable-projects-fcc/data/tree_map/kickstarter-funding-data.json";
+            const categories = [];
+            const sortedCategories = [];
+            
+            let currentData = null;
+
+            
+            
+
+            const dataSvg = d3.select("#dataSvg")
+                .attr("width",width)
+                .attr("height",height)
+
+            const legendSvg = d3.select("#legend")
+
+            Promise.all([
+                fetch(videoGameUrl).then(res=>res.json()),
+                fetch(movieSalesUrl).then(res=>res.json()),
+                fetch(kickStarterUrl).then(res=>res.json())])
+                .then(([videoData,movieData,starterData])=>{
+                    
+                    movieData.children.forEach(el=>{
+                        categories.push(el.name)})
+                    
+
+                    //create an array containing 18 different color values
+                    const interpolator = t => d3.interpolateTurbo(0.1 + t * 0.9);
+                    const color = d3.scaleOrdinal(
+                        d3.quantize(interpolator, categories.length)
+                    );
+
+                    const videoRoot = d3.hierarchy(movieData)
+                    .sum(d => d.value)
+                    .sort((a,b)=>b.value-a.value)
+                    
+                    d3.treemap()
+                        .size([width,height])
+                        .padding(1)
+                        (videoRoot);
+                    
+                    const nodes = dataSvg.selectAll("g")
+                        .data(videoRoot.leaves())
+                        .enter()
+                        .append("g")
+                        .attr("transform", d => `translate(${d.x0}, ${d.y0})`)
+                    videoRoot.children.forEach(el=>{sortedCategories.push(el.data.name)})
+                    console.log(videoRoot.leaves())
+
+                    nodes.append("rect")
+                        .attr("width", d=>d.x1-d.x0)
+                        .attr("height",d=>d.y1-d.y0)
+                        .attr("fill", d=>{
+                            const category = d.parent.data.name;
+                            return color(category)
+                        })
+                        .attr("class","tile")
+                        .attr("data-name",(d=>d.data.name))
+                        .attr("data-category",(d=>d.data.category))
+                        .attr("data-value",(d=>d.data.value))
+                        .on("mouseover",(event,d)=>{
+                            const tooltip = d3.select("#tooltip")
+                            .style("display","block")
+                            .attr("data-value",(d.data.value))
+                            tooltip.html(`
+                                <p>Name: ${d.data.name}</p>
+                                <p>Category: ${d.data.category}</p>
+                                <p>Value: ${d.data.value}</p>
+                                `)
+
+                        })
+
+                        .on("mousemove",(event,d)=>{
+                            d3.select("#tooltip")
+                            .style("left",event.pageX+20+"px")
+                            .style("top",event.pageY-30+"px")
+                        })
+                        .on("mouseout",()=>{
+                            d3.select("#tooltip").style("display","none")
+                        })
+                    
+                    nodes.append("text")
+                        .attr("x", 4)
+                        .attr("y", 14)
+                        .each(function(d){
+                            //line breaks for long names
+                            const words = d.data.name.split(" ")
+                            const result = [];
+                            for (let i=0; i<words.length; i++){
+                                if (words[i].length<5){
+                                    result.push(words[i] + " " + (words[i+1] || "") );
+                                    i++;
+                                } else{
+                                    result.push(words[i])
+                                }
+                            }
+                            const text = d3.select(this)
+                            result.forEach((word, i) =>{
+                                text.append("tspan")
+                                    .text(word)
+                                    .attr("x",0)
+                                    .attr("dy",i === 0 ? 0 : 11)
+                                    .attr("font-size","0.7em")
+                            })    
+                        })
+                    
+                    legendSvg.selectAll("rect")
+                        .data(sortedCategories)
+                        .enter()
+                        .append("rect")
+                        .attr("width",15)
+                        .attr("height",15)
+                        .attr("x",((d,i)=>i%3 * 200))
+                        .attr("y",((d,i)=>Math.floor(i/3) * 20))
+                        .attr("fill",(d=>color(d)))
+                        .attr("class","legend-item")
+                        
+
+                    legendSvg.selectAll("text")
+                        .data(sortedCategories)
+                        .enter()
+                        .append("text")
+                        .attr("x",((d,i)=>i%3 * 200 + 30))
+                        .attr("y",((d,i)=>Math.floor(i/3)*20 +14))
+                        .text((d)=>d)
+                    })
+        </script>
+        <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    </body>
+</html>

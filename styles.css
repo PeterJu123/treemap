@@ -1,0 +1,51 @@
+*{
+    box-sizing: border-box;
+}
+
+#nav-container{
+    width:100%;
+    display: flex;
+    justify-content: center;
+}
+
+#nav-container nav{
+    display:flex;
+    gap:10px;
+}
+
+nav button{
+    border:none;
+    background-color: transparent;
+    cursor:pointer;
+}
+
+#title, #description{
+    text-align: center;
+}
+
+.data-container,.legend-container{
+    width:100%;
+    height:auto;
+    display: flex;
+    justify-content: center;
+}
+
+#legend{
+    margin-top:10px;
+    width:550px;
+    height:auto;
+    padding:10px;
+}
+
+#tooltip{
+    width:auto;
+    height:auto;
+    padding:5px 1em;
+    background-color: blanchedalmond;
+    border:1px solid black;
+    position:absolute;
+}
+
+#tooltip p{
+    text-align: center;
+}
